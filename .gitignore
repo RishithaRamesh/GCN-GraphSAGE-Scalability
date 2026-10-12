@@ -13,3 +13,7 @@ env/
 
 # macOS
 .DS_Store
+
+# HPC Slurm jobs
+*.out
+slurm-*.out
