@@ -113,7 +113,10 @@ def main():
     # Legacy OGB dataset may use torch.load without weights_only; only trust
     # the known official OGB dataset in this directory.
     os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv', root=args.dataset_root)
+    dataset = PygNodePropPredDataset(
+        name="ogbn-products",
+        root=os.environ.get("OGB_ROOT", "dataset")
+    )
     data = dataset[0]
     data.edge_index = to_undirected(data.edge_index, num_nodes=data.num_nodes)
     split_idx = dataset.get_idx_split()

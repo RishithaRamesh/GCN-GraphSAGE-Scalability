@@ -164,7 +164,10 @@ def main():
 
     import os
     os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv')
+    dataset = PygNodePropPredDataset(
+        name="ogbn-arxiv",
+        root=os.environ.get("OGB_ROOT", "dataset")
+    )
 
     data = dataset[0]
     data.edge_index = torch.cat(
