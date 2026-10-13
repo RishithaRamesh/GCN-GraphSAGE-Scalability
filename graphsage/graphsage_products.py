@@ -3,7 +3,7 @@
 Uses NeighborLoader with bounded fanout for both training and evaluation.
 Evaluation uses stochastic sampled neighborhoods (not exact full-neighbor inference).
 For a quick smoke test, set --max-train-batches and --eval-max-nodes.
-Run on a Slurm GPU compute node, not a login node.
+Supports CUDA on Hazel, MPS on Apple Silicon, and CPU fallback.
 """
 import argparse
 import csv
@@ -116,16 +116,24 @@ def main():
     parser.add_argument('--num-workers', type=int, default=0)
     parser.add_argument('--dataset-root', default=os.environ.get('OGB_ROOT', 'dataset'))
     parser.add_argument('--output-dir', default='graphsage/results')
+    parser.add_argument('--device', choices=['auto', 'cuda', 'mps', 'cpu'], default='auto')
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or not args.neighbors or any(n < 1 for n in args.neighbors):
         parser.error('epochs, batch size, and neighbors must all be positive')
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    if not torch.cuda.is_available():
-        raise RuntimeError('CUDA unavailable: submit this script to a GPU compute node')
-    device = torch.device('cuda:0')
-    print(f'Device: {torch.cuda.get_device_name(0)}', flush=True)
+    if args.device == 'auto':
+        selected = ('cuda' if torch.cuda.is_available() else
+                    'mps' if torch.backends.mps.is_available() else 'cpu')
+    else:
+        selected = args.device
+    if selected == 'cuda' and not torch.cuda.is_available():
+        parser.error('CUDA is not available on this machine')
+    if selected == 'mps' and not torch.backends.mps.is_available():
+        parser.error('MPS is not available on this machine')
+    device = torch.device(selected)
+    print(f'Device: {device}', flush=True)
     print(f'Dataset root: {args.dataset_root}', flush=True)
     dataset = PygNodePropPredDataset(name='ogbn-products', root=args.dataset_root)
     data = dataset[0]  # Keep the large graph in host memory.
@@ -140,7 +148,8 @@ def main():
     process = psutil.Process()
     for epoch in range(1, args.epochs + 1):
         model.train()
-        torch.cuda.reset_peak_memory_stats()
+        if device.type == 'cuda':
+            torch.cuda.reset_peak_memory_stats()
         start = time.perf_counter()
         train_sum, train_nodes = 0.0, 0
         for step, batch in enumerate(train_loader):
@@ -155,21 +164,26 @@ def main():
             optimizer.step()
             train_sum += loss.item()*batch.batch_size
             train_nodes += batch.batch_size
-        torch.cuda.synchronize()
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        elif device.type == 'mps':
+            torch.mps.synchronize()
         train_sec = time.perf_counter() - start
         metrics = evaluate(model, data, split_idx, args.neighbors, args.batch_size,
                            device, args.num_workers, args.eval_max_nodes)
         row = {'epoch': epoch, 'optimization_loss': train_sum/train_nodes,
                **metrics, 'train_time_s': train_sec,
-               'gpu_peak_allocated_mb': torch.cuda.max_memory_allocated()/1024**2,
-               'gpu_peak_reserved_mb': torch.cuda.max_memory_reserved()/1024**2,
+               'gpu_peak_allocated_mb': (torch.cuda.max_memory_allocated()/1024**2
+                                         if device.type == 'cuda' else float('nan')),
+               'gpu_peak_reserved_mb': (torch.cuda.max_memory_reserved()/1024**2
+                                        if device.type == 'cuda' else float('nan')),
                'cpu_rss_mb_snapshot': process.memory_info().rss/1024**2,
                'train_target_nodes': train_nodes}
         rows.append(row)
         print(f'Epoch {epoch} | train {metrics["train_acc"]:.2%} | '
               f'valid {metrics["valid_acc"]:.2%} | test {metrics["test_acc"]:.2%} | '
               f'loss {row["optimization_loss"]:.4f} | train {train_sec:.1f}s | '
-              f'GPU peak {row["gpu_peak_allocated_mb"]:.0f} MB', flush=True)
+              f'CUDA peak {row["gpu_peak_allocated_mb"]:.0f} MB', flush=True)
     stem = (f'products_sage_neighbors{"-".join(map(str, args.neighbors))}'
             f'_batch{args.batch_size}_lr{args.lr}_seed{args.seed}'
             f'_epochs{args.epochs}_trainbatches{args.max_train_batches}'
