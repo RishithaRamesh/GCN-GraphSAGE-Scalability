@@ -155,7 +155,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--runs', type=int, default=10)
-    parser.add_argument('--output_dir', default='results')
+    parser.add_argument('--output_dir', default='gcn/results')
     args = parser.parse_args()
     print(args)
 

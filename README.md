@@ -44,3 +44,57 @@ Full-batch GCN is efficient for smaller graphs that fit into memory. GraphSAGE i
 The experiments demonstrate how neighborhood sampling makes large-scale graph learning more memory-efficient, while introducing trade-offs in training time and predictive performance.
 
 Detailed experimental results, convergence plots, and analysis are included in the accompanying report.
+
+## Reproducing the Experiments
+
+The experiments were conducted using Python 3.11, PyTorch, PyTorch Geometric, and OGB. Additional dependencies include NumPy, pandas, matplotlib, and psutil.
+
+Run all commands from the repository's root directory. 
+
+### Task 1: Full-Batch GCN
+
+Example command for the 3-layer GCN:
+
+```bash
+python gcn/gnn.py --num_layers 3 --hidden_channels 256 --lr 0.01 --epochs 200 --runs 1
+```
+
+To reproduce the depth experiments, change `--num_layers` to `2`, `3`, or `4`, keeping LR at `0.01`.
+
+To reproduce the learning-rate experiments, keep `--num_layers 3` and change `--lr` to `0.001`, `0.005`, or `0.01`.
+
+Results are saved in `gcn/results/`.
+
+### Task 2: Mini-Batch GraphSAGE
+
+Example command for the baseline experiment:
+
+```bash
+python graphsage/graphsage_products.py \
+  --epochs 10 \
+  --batch-size 512 \
+  --neighbors 10 10 \
+  --eval-max-nodes 10000 \
+  --num-workers 0
+```
+
+For the batch-size comparison, use `256`, `512`, and `1024` with neighbors `[10,10]`.
+
+For the neighbor-sampling comparison, use `[5,5]`, `[10,10]`, and `[15,15]` with batch size `512`.
+
+All experiments use learning rate `0.003` and random seed `42`. Results are saved in `graphsage/results/`.
+
+Evaluation uses sampled neighborhoods and 10,000 nodes per split, so accuracy values are approximate rather than official OGB leaderboard scores.
+
+### Task 3: Memory and Runtime Profiling
+
+Both models were profiled on the same CPU using `ogbn-arxiv`.
+
+```bash
+python profile_task3.py --model gcn --device cpu --epochs 3
+python profile_task3.py --model sage --device cpu --epochs 3
+```
+
+Profiling results and comparison plots are saved in `task3/results/`.
+
+**Note:** Numerical results may vary slightly depending on hardware, software versions, and random initialization. The submitted CSV files and plots contain the results reported in the accompanying PDF.
