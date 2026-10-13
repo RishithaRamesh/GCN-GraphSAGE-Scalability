@@ -1,0 +1,2 @@
+model,dataset,device,layers,hidden,epochs,batch_size,neighbors,epoch_time_s,total_training_time_s,peak_process_rss_mb,accelerator_allocated_snapshot_mb,accelerator_reserved_snapshot_mb,memory_note
+gcn,ogbn-arxiv,cpu,3,256,3,all nodes,full,1.9644,5.8932,6708.688,nan,nan,"RSS peak sampled across loading and training; accelerator values are snapshots, except CUDA allocated/reserved peaks"
