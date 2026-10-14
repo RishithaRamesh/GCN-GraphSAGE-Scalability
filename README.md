@@ -98,3 +98,15 @@ python profile_task3.py --model sage --device cpu --epochs 3
 Profiling results and comparison plots are saved in `task3/results/`.
 
 **Note:** Numerical results may vary slightly depending on hardware, software versions, and random initialization. The submitted CSV files and plots contain the results reported in the accompanying PDF.
+
+### Dataset Setup
+
+The datasets are not included in the submission because of their size. Both are publicly available through the Open Graph Benchmark (OGB).
+
+The experiments use:
+- `ogbn-arxiv` for GCN and profiling.
+- `ogbn-products` for GraphSAGE.
+
+Both scripts load datasets from the `dataset/` directory by default. If the datasets are not present, the OGB loader will prompt to download them automatically.
+
+For compatibility with newer PyTorch versions, the scripts use `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` when loading trusted OGB dataset files.
