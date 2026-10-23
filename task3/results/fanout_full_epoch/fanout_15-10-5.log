@@ -1,0 +1,15 @@
+/opt/anaconda3/envs/gnn-hw2/lib/python3.11/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Device: cpu
+Dataset root: /Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/dataset
+/opt/anaconda3/envs/gnn-hw2/lib/python3.11/site-packages/ogb/nodeproppred/dataset_pyg.py:69: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  self.data, self.slices = torch.load(self.processed_paths[0])
+/opt/anaconda3/envs/gnn-hw2/lib/python3.11/site-packages/ogb/nodeproppred/dataset_pyg.py:91: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:219.)
+  train_idx = torch.from_numpy(pd.read_csv(osp.join(path, 'train.csv.gz'), compression='gzip', header = None).values.T[0]).to(torch.long)
+Graph: 2,449,029 nodes, 123,718,280 edges
+Epoch 1 | train 90.22% | valid 89.34% | test 74.77% | loss 0.5125 | train 495.9s | CUDA peak nan MB
+Epoch 2 | train 91.22% | valid 89.99% | test 76.45% | loss 0.3736 | train 485.2s | CUDA peak nan MB
+Epoch 3 | train 91.75% | valid 90.11% | test 76.71% | loss 0.3506 | train 507.8s | CUDA peak nan MB
+Saved /Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/task3/results/fanout_full_epoch/products_sage_neighbors15-10-5_batch256_lr0.003_seed42_epochs3_trainbatches0_evalnodes10000.csv and /Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/task3/results/fanout_full_epoch/products_sage_neighbors15-10-5_batch256_lr0.003_seed42_epochs3_trainbatches0_evalnodes10000.png
+NOTE: Evaluation uses sampled neighborhoods, not exact full-neighbor inference.
+NOTE: Metrics use only a subset of each split and are smoke-test metrics.

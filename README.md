@@ -1,112 +1,132 @@
 # GCN vs. GraphSAGE: Scalability Analysis
 
-This project explores the differences between **full-batch Graph Convolutional Networks (GCN)** and **mini-batch GraphSAGE** for node classification.
+This repository contains full-batch GCN experiments, mini-batch GraphSAGE experiments, and memory/runtime scalability profiling.
 
-The goal is to understand how model architecture, learning rate, batch size, and neighborhood sampling affect accuracy, convergence, training time, and memory usage.
+## Setup
 
-## 1. Full-Batch GCN
-
-We trained GCN models on the **ogbn-arxiv** citation network to study the effect of model depth and learning rate.
-
-We compared 2, 3, and 4-layer GCNs, along with learning rates of 0.001, 0.005, and 0.01.
-
-The experiments showed that learning rate strongly influences convergence speed, while increasing model depth does not necessarily improve accuracy. The 3-layer GCN achieved approximately **72% test accuracy**.
-
-## 2. Mini-Batch GraphSAGE
-
-We trained GraphSAGE on the larger **ogbn-products** dataset using stochastic neighborhood sampling.
-
-We varied batch sizes (256, 512, 1024) and sampled neighbors per layer ([5,5], [10,10], [15,15]).
-
-The results showed that larger neighborhood samples generally improved validation accuracy but increased training time significantly. Batch size had a smaller effect on training time.
-
-The highest sampled validation accuracy was **90.35%**, using neighbor sampling [15,15] and batch size 512.
-
-Evaluation was performed on sampled neighborhoods and subsets of 10,000 nodes per split, so these results are approximate rather than official full-split OGB benchmark scores.
-
-## 3. Memory and Runtime Comparison
-
-We profiled both models on **ogbn-arxiv**, using the same CPU hardware.
-
-| Metric | GCN | GraphSAGE |
-|---|---:|---:|
-| Training time/epoch | 1.96 s | 45.61 s |
-| Peak process memory | 6708.7 MiB | 2108.8 MiB |
-
-GraphSAGE used approximately **69% less peak process memory** than full-batch GCN.
-
-However, it took longer to train because neighborhood sampling introduces overhead. This illustrates the trade-off between memory efficiency and computation time.
-
-## Conclusion
-
-Full-batch GCN is efficient for smaller graphs that fit into memory. GraphSAGE improves scalability by sampling a limited number of neighbors rather than processing the entire graph at once.
-
-The experiments demonstrate how neighborhood sampling makes large-scale graph learning more memory-efficient, while introducing trade-offs in training time and predictive performance.
-
-Detailed experimental results, convergence plots, and analysis are included in the accompanying report.
-
-## Reproducing the Experiments
-
-The experiments were conducted using Python 3.11, PyTorch, PyTorch Geometric, and OGB. Additional dependencies include NumPy, pandas, matplotlib, and psutil.
-
-Run all commands from the repository's root directory. 
-
-### Task 1: Full-Batch GCN
-
-Example command for the 3-layer GCN:
+Requirements: Python 3.11, PyTorch, PyTorch Geometric, OGB, NumPy, pandas, matplotlib, and psutil.
 
 ```bash
-python gcn/gnn.py --num_layers 3 --hidden_channels 256 --lr 0.01 --epochs 200 --runs 1
+conda activate gnn-hw2
+export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 ```
 
-To reproduce the depth experiments, change `--num_layers` to `2`, `3`, or `4`, keeping LR at `0.01`.
+Run all commands from the **repository root**. The `dataset/` directory is used for OGB datasets (`ogbn-arxiv` and `ogbn-products`). Missing datasets can be downloaded automatically by OGB.
 
-To reproduce the learning-rate experiments, keep `--num_layers 3` and change `--lr` to `0.001`, `0.005`, or `0.01`.
+Only enable the environment variable above for trusted dataset files.
 
-Results are saved in `gcn/results/`.
+## Task 1: Full-Batch GCN
 
-### Task 2: Mini-Batch GraphSAGE
+```bash
+python gcn/gnn.py \
+  --num_layers 3 \
+  --hidden_channels 256 \
+  --lr 0.01 \
+  --epochs 200 \
+  --runs 1
+```
 
-Example command for the baseline experiment:
+To reproduce all experiments:
+
+- **Depth:** Set `--num_layers` to `2`, `3`, and `4` with LR `0.01`.
+- **Learning rate:** Set `--lr` to `0.001`, `0.005`, and `0.01` with 3 layers.
+
+Results: `gcn/results/`
+
+## Task 2: Mini-Batch GraphSAGE
+
+**Baseline and hyperparameter sweeps:**
 
 ```bash
 python graphsage/graphsage_products.py \
+  --device mps \
+  --dataset-root dataset \
+  --output-dir graphsage/results \
   --epochs 10 \
   --batch-size 512 \
   --neighbors 10 10 \
-  --eval-max-nodes 10000 \
-  --num-workers 0
+  --hidden-channels 128 \
+  --lr 0.003 \
+  --seed 42 \
+  --eval-max-nodes 10000
 ```
 
-For the batch-size comparison, use `256`, `512`, and `1024` with neighbors `[10,10]`.
+- **Batch sizes:** `256`, `512`, `1024` with neighbors `10 10`.
+- **Fanouts:** `5 5`, `10 10`, `15 15` with batch size `512`.
+- **30-epoch baseline:** Change `--epochs` to `30`.
 
-For the neighbor-sampling comparison, use `[5,5]`, `[10,10]`, and `[15,15]` with batch size `512`.
+**Three-layer benchmark:**
 
-All experiments use learning rate `0.003` and random seed `42`. Results are saved in `graphsage/results/`.
+```bash
+python graphsage/graphsage_products.py \
+  --device cpu \
+  --dataset-root dataset \
+  --output-dir graphsage/results \
+  --epochs 10 \
+  --batch-size 1024 \
+  --neighbors 15 10 5 \
+  --hidden-channels 256 \
+  --lr 0.003 \
+  --seed 42 \
+  --eval-max-nodes 10000
+```
 
-Evaluation uses sampled neighborhoods and 10,000 nodes per split, so accuracy values are approximate rather than official OGB leaderboard scores.
+Results: `graphsage/results/`
 
-### Task 3: Memory and Runtime Profiling
+GraphSAGE evaluation uses sampled neighborhoods and 10,000 nodes per split, not exact full-neighborhood OGB inference.
 
-Both models were profiled on the same CPU using `ogbn-arxiv`.
+## Task 3: Scalability Profiling
+
+**GCN vs. GraphSAGE memory/runtime:**
 
 ```bash
 python profile_task3.py --model gcn --device cpu --epochs 3
 python profile_task3.py --model sage --device cpu --epochs 3
 ```
 
-Profiling results and comparison plots are saved in `task3/results/`.
+**Cross-dataset scalability:**
 
-**Note:** Numerical results may vary slightly depending on hardware, software versions, and random initialization. The submitted CSV files and plots contain the results reported in the accompanying PDF.
+```bash
+python task3/profile_graphsage_scalability.py \
+  --dataset-root dataset \
+  --experiment cross-dataset \
+  --batch-size 128 \
+  --fanout 10 10 \
+  --steps 3 \
+  --output task3/results/sage_scalability_cpu.csv
+```
 
-### Dataset Setup
+**Neighbor fanout profiling:**
 
-The datasets are not included in the submission because of their size. Both are publicly available through the Open Graph Benchmark (OGB).
+```bash
+python task3/profile_graphsage_scalability.py \
+  --dataset-root dataset \
+  --experiment fanout \
+  --batch-size 128 \
+  --steps 3 \
+  --output task3/results/sage_fanout_scalability.csv
+```
 
-The experiments use:
-- `ogbn-arxiv` for GCN and profiling.
-- `ogbn-products` for GraphSAGE.
+**Full-epoch fanout benchmark:**
 
-Both scripts load datasets from the `dataset/` directory by default. If the datasets are not present, the OGB loader will prompt to download them automatically.
+```bash
+python task3/run_graphsage_fanout_benchmark.py \
+  --dataset-root dataset \
+  --batch-size 256 \
+  --epochs 3
+```
 
-For compatibility with newer PyTorch versions, the scripts use `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` when loading trusted OGB dataset files.
+**Generate combined scalability figure:**
+
+```bash
+python task3/plot_scalability_comparison.py
+```
+
+Results: `task3/results/` and `task3/results/fanout_full_epoch/`
+
+## Notes
+
+- Dataset files are excluded from submission due to size.
+- Reported results may vary slightly with hardware and library versions.
+- CPU memory measurements include dataset and runtime allocations.
+- The accompanying PDF report contains the experimental results and analysis.

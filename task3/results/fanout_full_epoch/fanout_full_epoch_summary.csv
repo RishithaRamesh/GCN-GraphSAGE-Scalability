@@ -1,0 +1,4 @@
+fanout,batch_size,epochs,eval_nodes_per_split,best_epoch,best_valid_acc_pct,test_at_best_valid_pct,mean_training_s_per_epoch,polled_peak_process_rss_mib,total_run_wall_s,per_epoch_csv
+5-5-5,256,3,10000,3,88.96,74.45,105.491,9157.5,395.8,/Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/task3/results/fanout_full_epoch/products_sage_neighbors5-5-5_batch256_lr0.003_seed42_epochs3_trainbatches0_evalnodes10000.csv
+10-5-5,256,3,10000,3,90.1,74.56,183.433,10156.7,639.6,/Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/task3/results/fanout_full_epoch/products_sage_neighbors10-5-5_batch256_lr0.003_seed42_epochs3_trainbatches0_evalnodes10000.csv
+15-10-5,256,3,10000,3,90.11,76.71,496.307,10327.9,1622.1,/Users/rishitharamesh/Documents/GitHub/GCN-GraphSAGE-Scalability/task3/results/fanout_full_epoch/products_sage_neighbors15-10-5_batch256_lr0.003_seed42_epochs3_trainbatches0_evalnodes10000.csv
