@@ -77,13 +77,6 @@ GraphSAGE evaluation uses sampled neighborhoods and 10,000 nodes per split, not 
 
 ## Task 3: Scalability Profiling
 
-**GCN vs. GraphSAGE memory/runtime:**
-
-```bash
-python profile_task3.py --model gcn --device cpu --epochs 3
-python profile_task3.py --model sage --device cpu --epochs 3
-```
-
 **Cross-dataset scalability:**
 
 ```bash
